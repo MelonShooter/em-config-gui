@@ -54,7 +54,10 @@ configID - the ID of the config to be saved
 function EggrollMelonAPI.ConfigGUI.SendConfig(configID)
 	local saveString = util.TableToJSON(EggrollMelonAPI.ConfigGUI.ConfigTable[configID].saveTable)
 	
+	net.Start("EggrollMelonAPI_SendNewConfiguration")
+	net.WriteString(configID)
 	net.WriteString(saveString)
+	net.SendToServer()
 end
 
 net.Receive("EggrollMelonAPI_OpenConfig", function()
