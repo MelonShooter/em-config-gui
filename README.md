@@ -31,13 +31,20 @@ When the client tries to open the config and has sufficient permissions, the con
 
 The config is populated, then when the admin is done editing and presses save, the data is sent back to the server for verification and uploading to the file and also updates the configData table.
 
+
 TODO:
 Read code and comments especially and understand it inside and out
+
 Complete EggrollMelonAPI.ConfigGUI.AddConfigOption on the server so that it registers the option correctly (read the comment on the server right above this function.
+
 IMPLEMENT THE TABLES CORRECTLY. READ ALL COMMENTS.
+
 VERIFY THAT ALL FUNCTIONS GO ACCORDING TO THE PLAN. IF ANYTHING DEVIATES, ASK BEFORE MODIFYING.
+
 FINISH BACKEND.
+
 ASK ANY QUESTIONS YOU MAY HAVE.
+
 
 POSSIBLE OPTIMIZATIONS
 Only write a string to network if there is a change to the table and only network across the changes.
