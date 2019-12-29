@@ -46,7 +46,7 @@ function EggrollMelonAPI.ConfigGUI.OpenConfig(configID)
 end
 
 --[[
-Sends the new config options to the server
+Sends the new config options to the server. The saveTable should only contain a table of values of the config options that have the optionID as their keys
 Arguments:
 configID - the ID of the config to be saved
 ]]
@@ -63,10 +63,26 @@ end
 net.Receive("EggrollMelonAPI_OpenConfig", function()
 	local configID = net.ReadString()
 	local configData = net.ReadString()
+	local optionsTable
 	
 	if configData ~= "" then
-		EggrollMelonAPI.ConfigGUI.ConfigTable[configID].saveTable = util.JSONToTable(configData)
+		optionsTable = util.JSONToTable(configData)
 	end
+	
+	--parse the optionsTable to use for EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options, see structure in sv_configgui_base.lua
+	--[[the EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options table should have the following structure
+
+	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options table = {
+		["optionCategory"] = {
+			["optionID"] = {
+				["optionType"] = string,
+				["restrictions"] = table,
+				["currentValue"] = any
+			}
+		}
+	}
+
+	]]
 
 	EggrollMelonAPI.ConfigGUI.OpenConfig(configID)
 end)

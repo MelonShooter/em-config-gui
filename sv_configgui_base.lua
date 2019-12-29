@@ -73,11 +73,12 @@ function EggrollMelonAPI.ConfigGUI.RegisterConfig(addonName, configID, groupAcce
 		
 		net.Start("EggrollMelonAPI_OpenConfig")
 		net.WriteString(configID)
-		net.WriteString(util.TableToJSON(EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configData)) --add cooldown once this has been sent, also don't send if nothing has been changed
+		net.WriteString(util.TableToJSON(EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options)) --add cooldown once this has been sent, also don't send if nothing has been changed
 		net.Send(ply)
 	end)
 
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID] = {}
+	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options = {}
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].addonName = addonName
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].groupAccessTable = groupAccessTable
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].userAccessTable = userAccessTable
@@ -106,14 +107,27 @@ function EggrollMelonAPI.ConfigGUI.RegisterTable(configID, subsectionName, paren
 end
 
 --[[
-Adds an option to the config to configData table in the given subsection, if any.
+Adds an option to the config to the options table. Assign the config option to the given subsection in the configData table with the default value if the value doesn't exist in the file.
+The options table should have this struture:
+EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options = {
+	[optionID] = {
+		["optionText"] = string,
+		["optionCategory"] = string
+		["optionType"] = string
+		["restrictions"] = table
+		["currentValue"] = any
+	}
+}
 Arguments:
 configID - the ID of the config to add the category to
 configOptionTable:
-	optionName - the name of the option to add
+	optionID - a unique identifier for the option (to be used to verify info sent from client to server, NOT TO BE PUT IN FILE)
+	optionText - the text of the option to add
 	subsection - the subsection in the config table the option's value goes in
-	parentSection (optional)- the parent of the subsection if it's not the base config table
-	optionType - type of config option as string
+	parentSection (optional) - the parent of the subsection if it's not the base config table
+	optionCategory (optional) - The category of the config option (to appear in the GUI clientside)
+	optionName - the variable name of the option to be put into whatever subsection is specified, must be unique WITHIN the subsection
+	optionType - type of config option as string (like DTextEntry etc) TBD how this will be formatted
 	restrictions as table (TBD how it will be done)
 	defaultValue - the default value of the option if no option is found
 ]]
