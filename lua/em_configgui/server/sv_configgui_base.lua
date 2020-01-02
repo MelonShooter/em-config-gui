@@ -7,7 +7,7 @@ Create config elements that can be created
 Add config language capabilities.
 Make sure to prune the files for extraneous config options if they no longer exist
 Make sure that the person can only open the same config once. (to save on networking)
-Make sure that the client can still open different configs and still work without bugs.
+Make sure that the client can still open different configs at the same time and still work without bugs.
 Maybe lock the player when they're in the config (make sure it's safe in terms of networking, this will be hard).
 Rename the OpenConfig net message and change it so that it opens and closes the config, don't network across a boolean. set a boolean on the server attached to the player so when they send the message back to the server, you can know to close the panel. See if you can verify if the client has truly closed the panel by using purely serverside code.
 ONLY WRITE WHAT'S CHANGED (AREN'T DEFAULT VALUES) INTO THE FILE. CHECK AGAINST configDataPruned TABLE.
@@ -81,7 +81,7 @@ function EggrollMelonAPI.ConfigGUI.RegisterConfig(addonName, configID, groupAcce
 		net.Start("EggrollMelonAPI_OpenConfig") --don't do if config is currently open
 		net.WriteString(configID)
 		net.WriteString(addonName)
-		net.WriteString(util.TableToJSON(EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options)) --add cooldown once this has been sent and needs to be sent again, also don't send if nothing has been changed
+		net.WriteString(util.TableToJSON(EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options)) --add cooldown once this has been sent and needs to be sent again, also don't send if nothing has been changed, check against old table by creating variable in net message EggrollMelonAPI_SendNewConfiguration, make sure to check if table content is equal, not if the two tables are equal
 		net.Send(ply)
 	end)
 
@@ -92,6 +92,7 @@ function EggrollMelonAPI.ConfigGUI.RegisterConfig(addonName, configID, groupAcce
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].userAccessTable = userAccessTable
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].consoleCommand = consoleCommand
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configData = {}
+	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].optionLookup = {}
 	
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configDataPruned = {util.JSONToTable(file.Read("em_configgui/" .. configID .. ".txt"))} --table with registered tables and options (retrieved from file, new data will also be saved in here), check if file doesn't exist
 	
@@ -165,13 +166,14 @@ function EggrollMelonAPI.ConfigGUI.AddConfigOption(configID, optionTable)
 		EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configData[optionName] = currentValue
 	end
 
-	local optionID = configOptionTable.optionID
+	local optionID = optionTable.optionID
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID] = {}
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].optionText = optionTable.optionText
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].optionCategory = optionTable.optionCategory or "General Config"
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].optionType = optionTable.optionType
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].optionData = optionTable.optionData
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].currentValue = currentValue
+	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].optionLookup[optionID] = {optionName, parentSection, subsection}
 end
 
 --[[
@@ -198,15 +200,31 @@ local function isValidSave(configID, saveTable)
 	end
 
 	local optionTable = EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options
-	
+
 	for optionID, newValue in pairs(saveTable) do
 		if not optionTable[optionID] or type(newValue) ~= optionTypeToType[optionTable[optionID].optionType] then
 			return false
 		end
 	end
-	
+
 	return true
 end
+
+--[[
+options table
+	[optionID] = {
+		["optionText"] = string,
+		["optionCategory"] = string
+		["optionType"] = string
+		["optionData"] = table
+		["currentValue"] = any
+	}
+configData has the structure defined by the dev and has all default values along with changed values
+configDataPruned has structure defined by dev and all non-default values
+
+change currentValue in the options table
+and change values in configData and configDataPruned then write the pruned data to the file
+]]
 
 --[[
 Make sure to check if any of the values sent are default values, if so, remove them if they are in the file. Make sure to check if they are old values (values currently in the config), if so, don't do anything with them.
@@ -218,10 +236,25 @@ net.Receive("EggrollMelonAPI_SendNewConfiguration", function(_, ply)
 	local configID = net.ReadString()
 	local saveTable = util.JSONToTable(net.ReadString())
 	local configTable = EggrollMelonAPI.ConfigGUI.ConfigTable[configID]
-	local canAccessConfig = canAccessConfig(ply, configTable.addonName, configTable.groupAccessTable, configTable.userAccessTable)
-	if not canAccessConfig or not saveTable or not isValidSave(configID, saveTable) then return end
+	local canAccess = canAccessConfig(ply, configTable.addonName, configTable.groupAccessTable, configTable.userAccessTable)
+	if not canAccess or not saveTable or not isValidSave(configID, saveTable) then return end
 
 	for optionID, newValue in pairs(saveTable) do
+		EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].currentValue = newValue
+		local optionVariable = EggrollMelonAPI.ConfigGUI.ConfigTable[configID].optionLookup[optionID][2]
+		local parent = EggrollMelonAPI.ConfigGUI.ConfigTable[configID].optionLookup[optionID][2]
+		local child = EggrollMelonAPI.ConfigGUI.ConfigTable[configID].optionLookup[optionID][3]
+
+		if parent and child then
+			EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configData[parent][child][optionVariable] = newValue
+			EggrollMelonAPI.ConfigGUI.ConfigTablePruned[configID].configDataPruned[parent][child][optionVariable] = newValue
+		elseif parent then
+			EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configData[parent][optionVariable] = newValue
+			EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configDataPruned[parent][optionVariable] = newValue
+		else
+			EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configData[optionVariable] = newValue
+			EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configDataPruned[optionVariable] = newValue
+		end
 		-- change the options, configData, and configDataPruned table in this loop, figure out how to use the optionID given those 3 tables in their current state to modify configData and configDataPruned
 	end
 end)
