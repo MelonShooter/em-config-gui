@@ -1,3 +1,8 @@
+--[[
+LOCALIZATION CAPABILITIES
+RESET TO DEFAULT BUTTON
+]]
+
 EggrollMelonAPI = EggrollMelonAPI or {}
 EggrollMelonAPI.ConfigGUI = EggrollMelonAPI.ConfigGUI or {}
 EggrollMelonAPI.ConfigGUI.ConfigTable = EggrollMelonAPI.ConfigGUI.ConfigTable or {}
@@ -18,9 +23,6 @@ function EggrollMelonAPI.ConfigGUI.RegisterConfig(addonName, configID)
 	}
 end
 
-function EggrollMelonAPI.ConfigGUI.RegisterTable()
-end
-
 --[[
 Adds a category to the config
 Arguments:
@@ -32,8 +34,6 @@ function EggrollMelonAPI.ConfigGUI.AddConfigCategory(configID, categoryName)
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[categoryName] = {}
 end
 
-function EggrollMelonAPI.ConfigGUI.AddConfigOption() end
-
 --[[
 Opens the given config
 Arguments:
@@ -42,41 +42,60 @@ configID - the ID of the config to be opened
 
 function EggrollMelonAPI.ConfigGUI.OpenConfig(configID)
 	local configGUI = vgui.Create("EggrollMelonAPI_ConfigGUI")
-	configGUI:AddCategories(EggrollMelonAPI.ConfigGUI.ConfigTable[configID].categories)
+	configGUI:SetConfigID(configID)
+	configGUI:PopulateConfig(EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options)
 end
 
 --[[
-Sends the new config options to the server. The saveTable should only contain a table of values of the config options that have the optionID as their keys
+Sends the new config options to the server. The saveTable should only contain the new value of the config options that have the optionID as their keys
 Arguments:
 configID - the ID of the config to be saved
 ]]
 
 function EggrollMelonAPI.ConfigGUI.SendConfig(configID)
 	local saveString = util.TableToJSON(EggrollMelonAPI.ConfigGUI.ConfigTable[configID].saveTable)
-	
+
 	net.Start("EggrollMelonAPI_SendNewConfiguration")
 	net.WriteString(configID)
 	net.WriteString(saveString)
 	net.SendToServer()
+	
+	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].saveTable = {}
 end
 
 net.Receive("EggrollMelonAPI_OpenConfig", function()
 	local configID = net.ReadString()
+	local addonName = net.ReadString()
 	local configData = net.ReadString()
 	local optionsTable
 	
 	if configData ~= "" then
 		optionsTable = util.JSONToTable(configData)
+		optionsTable.addonName = addonName
 	end
 	
-	--parse the optionsTable to use for EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options, see structure in sv_configgui_base.lua
+	--[[
+	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options = {
+		[optionID] = {
+			["optionText"] = string,
+			["optionCategory"] = string
+			["optionType"] = string
+			["optionData"] = table
+			["currentValue"] = any
+		}
+	}
+	]]
+	
+	--parse the optionsTable to use for EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options, see structure in sv_configgui_base.lua. the category should already be created for you once they register the category. don't create the category table yourself.
 	--[[the EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options table should have the following structure
 
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options table = {
 		["optionCategory"] = {
 			["optionID"] = {
-				["optionType"] = string,
-				["restrictions"] = table,
+				["optionText"] = string
+				["addonName"] = string
+				["optionType"] = string
+				["optionData"] = table
 				["currentValue"] = any
 			}
 		}
@@ -86,3 +105,10 @@ net.Receive("EggrollMelonAPI_OpenConfig", function()
 
 	EggrollMelonAPI.ConfigGUI.OpenConfig(configID)
 end)
+
+--[[
+These don't do anything on the client. Allows for them to be called in the shared realm
+]]
+
+function EggrollMelonAPI.ConfigGUI.AddConfigOption() end
+function EggrollMelonAPI.ConfigGUI.RegisterTable() end
