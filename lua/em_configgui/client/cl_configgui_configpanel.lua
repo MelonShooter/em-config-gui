@@ -7,8 +7,11 @@ Add something at the drop down menu at the top right to change languages, Maybe 
 local PANEL = {}
 
 function PANEL:Init()
-	self:SetSizeUpdate(ScrW() * .7, ScrH() * .7)
 	self:MakePopup()
+	self:SetSizeUpdate(ScrW() * .7, ScrH() * .7)
+	self.CloseButton.DoClick = function()
+		LocalPlayer():ConCommand(EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].consoleCommand)
+	end
 end
 
 function PANEL:SetConfigID(configID)
@@ -26,6 +29,9 @@ function PANEL:PopulateConfig(configInfo)
 			end)
 		end
 	end
+
+	self:SetTitle(EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].addonName .. " Config")
+	self:SetCategory("General Config")
 end
 
 vgui.Register("EggrollMelonAPI_ConfigGUI", PANEL, "EggrollMelonAPI_DarkFrameWithCategories")
