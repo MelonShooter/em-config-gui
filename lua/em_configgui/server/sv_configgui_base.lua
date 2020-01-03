@@ -34,7 +34,7 @@ local function canAccessConfig(ply, addonName, groupAccessTable, userAccessTable
 		userGroups["user"] = true
 
 		local userTable = util.KeyValuesToTable(file.Read("settings/users.txt", "GAME")) --Get manually added user groups
-		
+
 		for groupName in pairs(userTable) do
 			userGroups[groupName] = true
 		end
@@ -53,13 +53,13 @@ local function canAccessConfig(ply, addonName, groupAccessTable, userAccessTable
 			ErrorNoHalt(errorMessage)
 		end
 	end
-	
+
 	for _, v in ipairs(userAccessTable) do
 		if isnumber(v) and tonumber(ply:SteamID64()) == v or isstring(v) and (ply:SteamID64() == v or ply:SteamID() == v) then
 			return true
 		end
 	end
-	
+
 	return false
 end
 

@@ -12,7 +12,7 @@ function PANEL:SetOptionData(optionData)
 end
 
 function PANEL:Paint(w, h)
-	
+
 end
 
 vgui.Register("EggrollMelonAPI_NumSliderOption", PANEL, "DNumSlider")
