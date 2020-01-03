@@ -104,7 +104,7 @@ net.Receive("EggrollMelonAPI_OpenConfig", function()
 			EggrollMelonAPI.ConfigGUI.ConfigTable[configID].optionsWithoutCategories[optionID] = serverOptions.currentValue
 		end
 	end
-	
+
 	--[[
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options = {
 		[optionID] = {
@@ -116,7 +116,7 @@ net.Receive("EggrollMelonAPI_OpenConfig", function()
 		}
 	}
 	]]
-	
+
 	--parse the optionsTable to use for EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options, see structure in sv_configgui_base.lua. the category should already be created for you once they register the category. don't create the category table yourself.
 	--[[the EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options table should have the following structure
 
