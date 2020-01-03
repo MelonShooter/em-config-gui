@@ -1,0 +1,29 @@
+name: CI/CD
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Download and unpack glualint
+        run: |
+          wget https://github.com/FPtje/GLuaFixer/releases/download/1.12.0/glualint-1.12.0-linux-stripped.zip
+          unzip glualint-1.12.0-linux-stripped.zip
+      - name: Execute glualint
+        run: ./glualint .
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Prepare for upload
+        run: |
+          rm -r .git
+          rm -r .github
+          rm *.md
+      - name: Upload artifact
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          name: auto_body_npc
+          path: .
