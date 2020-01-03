@@ -1,0 +1,21 @@
+name: LOC Counter
+
+on: [push]
+
+jobs:
+  count-loc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Setup Node.js
+        uses: actions/setup-node@v1.1.0
+      - name: Install SLOC
+        run: npm install -g sloc
+      - name: Run SLOC
+        run: |
+          sloc --keys source --details ./ 2>&1 | tee source_loc.txt # For each file.
+      - name: Upload lines of code as an artifact
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          name: source_loc
+          path: source_loc.txt
