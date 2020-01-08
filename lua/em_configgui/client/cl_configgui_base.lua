@@ -1,6 +1,8 @@
 --[[
+MAKE THE CHANGE CATEGORY BUTTON AND CLOSEBUTTON ONLY WORK IF savePanel.isActive IS nil. Maybe make the popup flash red when they try.
+DONT DO ANYTHING ABOUT THE CONCOMMAND, LEAVE IT SO THAT IT CLOSES REGARDLESS OF WHETHER OR NOT THEY SAVED
+Add something at the drop down menu at the top right to change languages, Maybe put a universal symbol up there.
 LOCALIZATION CAPABILITIES
-RESET TO DEFAULT BUTTON
 ]]
 
 EggrollMelonAPI = EggrollMelonAPI or {}
@@ -22,7 +24,6 @@ function EggrollMelonAPI.ConfigGUI.RegisterConfig(addonName, configID, consoleCo
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].addonName = addonName
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].consoleCommand = consoleCommand
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].saveTable = {} --table with registered tables and options (to be received and sent to server)
-	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].optionsWithoutCategories = {}
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options = { --table with categories and options (for client)
 		["General Config"] = {}
 	}
@@ -69,14 +70,7 @@ configID - the ID of the config to be saved
 ]]
 
 function EggrollMelonAPI.ConfigGUI.SendConfig(configID)
-	for optionID, newValue in pairs(EggrollMelonAPI.ConfigGUI.ConfigTable[configID].saveTable) do
-		if EggrollMelonAPI.ConfigGUI.ConfigTable[configID].optionsWithoutCategories[optionID] == newValue then
-			EggrollMelonAPI.ConfigGUI.ConfigTable[configID].saveTable[optionID] = nil
-		end
-	end
-
 	local saveString = util.TableToJSON(EggrollMelonAPI.ConfigGUI.ConfigTable[configID].saveTable)
-
 	net.Start("EggrollMelonAPI_SendNewConfiguration")
 	net.WriteString(configID)
 	net.WriteString(saveString)
@@ -101,7 +95,6 @@ net.Receive("EggrollMelonAPI_OpenConfig", function()
 			local optionCategory = serverOptions.optionCategory
 			serverOptions.optionCategory = nil
 			EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionCategory][optionID] = serverOptions
-			EggrollMelonAPI.ConfigGUI.ConfigTable[configID].optionsWithoutCategories[optionID] = serverOptions.currentValue
 		end
 	end
 
