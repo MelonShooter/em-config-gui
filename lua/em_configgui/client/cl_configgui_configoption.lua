@@ -24,19 +24,27 @@ function PANEL:SetOptionID(optionID)
 end
 
 --[[
+Sets the category that this option belongs to
+]]
+
+function PANEL:SetCategory(category)
+	self.category = category
+end
+
+--[[
 Sets the value of the option
 ]]
 
 function PANEL:SetValue(newValue)
 	self.value = newValue
 
-	if self.revertButton:IsVisible() and newValue == self.oldValue then
+	if self.revertButton:IsVisible() and newValue == self.oldValue then --Hides or shows the revert changes button for the option
 		self.revertButton:SetVisible(false)
 	elseif not self.revertButton:IsVisible() and newValue ~= self.oldValue then
 		self.revertButton:SetVisible(true)
 	end
 
-	if self.resetButton:IsVisible() and newValue == self.defaultValue then
+	if self.resetButton:IsVisible() and newValue == self.defaultValue then --Hides or shows the reset to default button for the option
 		self.resetButton:SetVisible(false)
 	elseif not self.resetButton:IsVisible() and newValue ~= self.defaultValue then
 		self.resetButton:SetVisible(true)
@@ -58,6 +66,7 @@ function PANEL:Update()
 	if not self.value then return end
 
 	EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].saveTable[self.optionID] = self.value
+	EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].options[self.category][self.optionID].currentValue = self.value
 	self.oldValue = self.value
 	self.revertButton:SetVisible(false)
 end
@@ -75,10 +84,10 @@ end
 
 --[[
 Populate the option by creating the according option as a child of this panel. Make the option dock fill the panel. Creates label with optionText
-				["currentValue"] = any
-				["optionText"] = string
-				["optionType"] = string
-				["optionData"] = table
+	["currentValue"] = any
+	["optionText"] = string
+	["optionType"] = string
+	["optionData"] = table
 ]]
 
 function PANEL:PopulateOption(optionInfo)

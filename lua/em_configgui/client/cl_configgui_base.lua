@@ -1,8 +1,7 @@
 --[[
-MAKE THE CHANGE CATEGORY BUTTON AND CLOSEBUTTON ONLY WORK IF savePanel.isActive IS nil. Maybe make the popup flash red when they try.
-DONT DO ANYTHING ABOUT THE CONCOMMAND, LEAVE IT SO THAT IT CLOSES REGARDLESS OF WHETHER OR NOT THEY SAVED
-Add something at the drop down menu at the top right to change languages, Maybe put a universal symbol up there.
+Add something at the drop down menu at the top left, after title, to change languages, Maybe put a universal symbol up there.
 LOCALIZATION CAPABILITIES
+
 ]]
 
 EggrollMelonAPI = EggrollMelonAPI or {}
@@ -15,17 +14,20 @@ Registers a config GUI
 Arguments:
 addonName - Name of the addon to display in the config
 configID - string identifier to create config options
+consoleCommand - the console command to open the config GUI
+defaultCategoryName - the name of the default category in the GUI
 ]]
 
-function EggrollMelonAPI.ConfigGUI.RegisterConfig(addonName, configID, consoleCommand)
+function EggrollMelonAPI.ConfigGUI.RegisterConfig(addonName, configID, consoleCommand, defaultCategoryName)
 	if EggrollMelonAPI.ConfigGUI.ConfigTable[configID] then return end
 
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID] = {}
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].addonName = addonName
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].consoleCommand = consoleCommand
+	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].defaultCategory = defaultCategoryName
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].saveTable = {} --table with registered tables and options (to be received and sent to server)
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options = { --table with categories and options (for client)
-		["General Config"] = {}
+		[EggrollMelonAPI.ConfigGUI.ConfigTable[configID].defaultCategory or "General Config"] = {}
 	}
 end
 
@@ -36,7 +38,7 @@ configID - the ID of the config to add the category to
 categoryName - the name of the category to add
 ]]
 
-function EggrollMelonAPI.ConfigGUI.AddConfigCategory(configID, categoryName)
+function EggrollMelonAPI.ConfigGUI.RegisterCategory(configID, categoryName)
 	if EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[categoryName] then return end
 
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[categoryName] = {}
@@ -53,7 +55,7 @@ local function openConfig(configID)
 
 	EggrollMelonAPI.ConfigGUI.ActiveConfigs[configID] = vgui.Create("EggrollMelonAPI_ConfigGUI")
 	EggrollMelonAPI.ConfigGUI.ActiveConfigs[configID]:SetConfigID(configID)
-	EggrollMelonAPI.ConfigGUI.ActiveConfigs[configID]:PopulateConfig(EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options)
+	EggrollMelonAPI.ConfigGUI.ActiveConfigs[configID]:PopulateConfig()
 end
 
 local function closeConfig(configID)

@@ -2,18 +2,9 @@
 TODO:
 Maybe use file string replacement to automatically make the person who purchases the addon have access to the config?
 Maybe make us 2 able to access the config GUI automatically?
-Create config base panel which will accept table to create the config procedurally
-Create config elements that can be created
 Add config language capabilities.
-Make sure to prune the files for extraneous config options if they no longer exist
-Make sure that the person can only open the same config once. (to save on networking)
 Make sure that the client can still open different configs at the same time and still work without bugs.
-Maybe lock the player when they're in the config (make sure it's safe in terms of networking, this will be hard).
-Rename the OpenConfig net message and change it so that it opens and closes the config, don't network across a boolean. set a boolean on the server attached to the player so when they send the message back to the server, you can know to close the panel. See if you can verify if the client has truly closed the panel by using purely serverside code.
-ONLY WRITE WHAT'S CHANGED (AREN'T DEFAULT VALUES) INTO THE FILE. CHECK AGAINST configDataPruned TABLE.
-configDataPruned only carries changed values, not default values
-configData has all values changed values or default values
-configDataPruned should be checked for corruption before saving to file, if it is corrupt, revert it all back to the last written thing in the file
+In the end, make sure to test everything, including sending bogus net messages
 ]]
 
 util.AddNetworkString("EggrollMelonAPI_OpenConfig")
@@ -69,14 +60,15 @@ Registers a config GUI, creating a console command to open a config GUI and the 
 Arguments:
 addonName - Name of the addon to display in the config
 configID - string identifier to create config options
+consoleCommand - the console command to open the config GUI
+defaultCategoryName - the name of the default category in the GUI
 groupAccessTable - the table of user groups who can access the config GUI
 userAccessTable - the table of steam IDs and steam ID 64's that can access the config GUI
-consoleCommand - the console command to open the config GUI
 chatCommand (optional) - the chat command to open the config GUI
 ]]
 
-function EggrollMelonAPI.ConfigGUI.RegisterConfig(addonName, configID, consoleCommand, groupAccessTable, userAccessTable, chatCommand)
-	--if EggrollMelonAPI.ConfigGUI.ConfigTable[configID] then return end
+function EggrollMelonAPI.ConfigGUI.RegisterConfig(addonName, configID, consoleCommand, defaultCategoryName, groupAccessTable, userAccessTable, chatCommand)
+	if EggrollMelonAPI.ConfigGUI.ConfigTable[configID] then return end
 
 	configID = string.lower(configID)
 
@@ -115,7 +107,8 @@ function EggrollMelonAPI.ConfigGUI.RegisterConfig(addonName, configID, consoleCo
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].groupAccessTable = groupAccessTable
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].userAccessTable = userAccessTable
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].consoleCommand = consoleCommand
-	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configData = {}
+	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configData = {} --Will contain all changed and default values
+	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].defaultCategory = defaultCategoryName
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].optionLookup = {}
 
 	local configFileName = "em_configgui/" .. configID .. ".txt"
@@ -206,7 +199,7 @@ function EggrollMelonAPI.ConfigGUI.AddConfigOption(configID, optionTable)
 
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID] = {}
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].optionText = optionTable.optionText
-	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].optionCategory = optionTable.optionCategory or "General Config"
+	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].optionCategory = optionTable.optionCategory or EggrollMelonAPI.ConfigGUI.ConfigTable[configID].defaultCategory or "General Config"
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].optionType = optionTable.optionType
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].optionData = optionTable.optionData
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].currentValue = currentValue
@@ -330,4 +323,4 @@ end)
 This doesn't do anything on the server. Allows for it to be called in the shared realm
 ]]
 
-function EggrollMelonAPI.ConfigGUI.AddConfigCategory(configID, categoryName) end
+function EggrollMelonAPI.ConfigGUI.RegisterCategory() end

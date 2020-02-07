@@ -21,34 +21,63 @@ surface.CreateFont("EggrollMelonAPI_ConfigSaveTextFont", {
 
 local PANEL = {}
 
-function PANEL:MoveBack(button, oldSavePanelPosX)
-	local savePanel = button:GetParent()
+--[[
+Called when the panel should be move back below the panel
+]]
+
+function PANEL:MoveBack()
+	local savePanel = self.savePanel
+	local oldSavePanelPosX = savePanel:GetPos()
 
 	if not savePanel.isActive then return end
+
+	self.CloseButton.disable = false
 
 	savePanel.ready = nil --Deactivates the button from being pressed again
 	savePanel.isActive = nil --Allows OnValueChange() to be able to be called again
 
-	savePanel:MoveTo(oldSavePanelPosX, self:GetTall() * .9, .2, 0, 2, function()
-		savePanel:MoveTo(oldSavePanelPosX, self:GetTall(), .2, 0, 1)
+	savePanel:MoveTo(oldSavePanelPosX, self:GetTall() * .9, .2, 0, 1, function()
+		savePanel:MoveTo(oldSavePanelPosX, self:GetTall(), .2, 0, 2)
 	end)
 end
 
 function PANEL:Init()
 	self:MakePopup()
+	self:SetNoCategoryRefresh(true)
 	self:SetSizeUpdate(ScrW() * .7, ScrH() * .7)
-	self.CloseButton.DoClick = function()
-		LocalPlayer():ConCommand(EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].consoleCommand)
+	self.CloseButton.DoClick = function(closeButton)
+		if closeButton.disable then
+			self.savePanel:ColorTo(Color(60, 40, 40), .1, 0, function()
+				self.savePanel:ColorTo(Color(40, 40, 40), .2)
+			end)
+
+			self:GetCurrentCategoryButton():ColorTo(Color(200, 100, 100), .1, 0, function()
+				self:GetCurrentCategoryButton():ColorTo(Color(200, 200, 200), .2)
+			end)
+
+			self.CloseButton:ColorTo(Color(200, 100, 100), .1, 0, function()
+				self.CloseButton:ColorTo(Color(200, 200, 200), .2)
+			end)
+		else
+			LocalPlayer():ConCommand(EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].consoleCommand)
+		end
 	end
 
 	self.savePanel = vgui.Create("DPanel", self)
 	self.savePanel:SetSize(self:GetWide() / 2, self:GetTall() / 15)
 	self.savePanel:SetPos(self.ContentPanel:GetWide() / 2 + self.CategoriesPanel:GetWide() - self.savePanel:GetWide() / 2, self:GetTall())
-	self.savePanel.Paint = function(savePanel, w, h)
-		draw.RoundedBox(8, 0, 0, w, h, Color(40, 40, 40))
+	self.savePanel.SetColor = function(savePanel, color)
+		savePanel.currentColor = color
+		savePanel.Paint = function(_, w, h)
+			draw.RoundedBox(8, 0, 0, w, h, savePanel.currentColor)
+		end
 	end
 
-	local oldSavePanelPosX = self.savePanel:GetPos()
+	self.savePanel:SetColor(Color(40, 40, 40))
+
+	self.savePanel.GetColor = function()
+		return self.savePanel.currentColor
+	end
 
 	self.saveLabel = vgui.Create("DLabel", self.savePanel)
 	self.saveLabel:SetFont("EggrollMelonAPI_ConfigSaveTextFont")
@@ -71,7 +100,7 @@ function PANEL:Init()
 	self.saveButton.DoClick = function(saveButton)
 		if not self.savePanel.ready then return end
 
-		self:MoveBack(saveButton, oldSavePanelPosX)
+		self:MoveBack()
 
 		for _, option in ipairs(self.ContentDScrollPanel:GetCanvas():GetChildren()) do
 			if option:GetName() ~= "EggrollMelonAPI_ConfigOption" then continue end
@@ -100,8 +129,6 @@ function PANEL:Init()
 				option.option:SetValue(option.oldValue)
 			end
 		end
-
-		self:MoveBack(revertButton, oldSavePanelPosX)
 	end
 end
 
@@ -109,11 +136,33 @@ function PANEL:SetConfigID(configID)
 	self.configID = configID
 end
 
-function PANEL:PopulateConfig(configInfo)
-	for category, optionsTable in pairs(configInfo) do
-		self:AddCategory(category)
+--[[
+Populates the config with the config values in the default category
+]]
 
-		self:AddContentToCategory(category, "DPanel", function(top)
+function PANEL:PopulateConfig()
+	for categoryName, optionsTable in SortedPairs(EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].options) do --Get updated em_configgui, use priority system here
+		local categoryID = self:AddCategory(categoryName)
+
+		self:GetCategoryButton(categoryID).DoClick = function( )
+			if self:GetCurrentCategoryName() == categoryName then return end
+
+			if self.savePanel.isActive then
+				self.savePanel:ColorTo(Color(60, 40, 40), .1, 0, function()
+					self.savePanel:ColorTo(Color(40, 40, 40), .2)
+				end)
+
+				self:GetCurrentCategoryButton():ColorTo(Color(200, 100, 100), .1, 0, function()
+					self:GetCurrentCategoryButton():ColorTo(Color(200, 200, 200), .2)
+				end)
+
+				return
+			end
+
+			self:SetCategory(categoryID)
+		end
+
+		self:AddContentToCategory(categoryID, "DPanel", function(top)
 			top:SetTall(self:GetTall() * .05)
 			top:SetPaintBackground(false)
 			top.Paint = function(_, w, h)
@@ -140,36 +189,45 @@ function PANEL:PopulateConfig(configInfo)
 		end)
 
 		for optionID, optionInfo in SortedPairsByMemberValue(optionsTable, "priority", false) do
-			self:AddContentToCategory(category, "EggrollMelonAPI_ConfigOption", function(option)
+			self:AddContentToCategory(categoryID, "EggrollMelonAPI_ConfigOption", function(option)
 				option:SetConfigID(self.configID)
 				option:SetOptionID(optionID)
+				option:SetCategory(categoryName)
 				option:PopulateOption(optionInfo)
 			end)
 		end
 
-		self:AddContentToCategory(category, "DPanel", function(bottom)
+		self:AddContentToCategory(categoryID, "DPanel", function(bottom)
 			bottom:SetTall(self:GetTall() * .1)
 			bottom:SetPaintBackground(false)
+
+			local showResetAll = false
+
+			for _, option in ipairs(self.ContentDScrollPanel:GetCanvas():GetChildren()) do
+				if option:GetName() ~= "EggrollMelonAPI_ConfigOption" or option.category ~= categoryName then continue end --Continue if the child isn't config option or doesn't belong to correct category
+
+				if option.resetButton:IsVisible() then
+					showResetAll = true
+
+					break
+				end
+			end
+
+			if showResetAll then
+				self.resetAll:SetVisible(true)
+			else
+				self.resetAll:SetVisible(false)
+			end
 		end)
+
+		if categoryName ~= (EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].defaultCategory or "General Config") then continue end
+
+		self:SetCategory(categoryID)
 	end
 
 	self:SetTitle(EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].addonName .. " Config")
-	self:SetCategory("General Config")
 
-	local showResetAll = false
-
-	for _, option in ipairs(self.ContentDScrollPanel:GetCanvas():GetChildren()) do
-		if option:GetName() ~= "EggrollMelonAPI_ConfigOption" then continue end
-		if not self.resetAll:IsVisible() and not showResetAll and option.resetButton:IsVisible() then
-			showResetAll = true
-		end
-	end
-
-	if showResetAll then
-		self.resetAll:SetVisible(true)
-	else
-		self.resetAll:SetVisible(false)
-	end
+	self.LanguageSelection = vgui.Create("")
 end
 
 function PANEL:OnValueChange()
@@ -177,7 +235,7 @@ function PANEL:OnValueChange()
 	local showResetAll = false
 	local moveSavePanelBack = true
 
-	for _, option in ipairs(self.ContentDScrollPanel:GetCanvas():GetChildren()) do
+	for _, option in ipairs(self.ContentDScrollPanel:GetCanvas():GetChildren()) do --If any of the reset to default buttons are visible, make the reset all to default button visible
 		if option:GetName() ~= "EggrollMelonAPI_ConfigOption" then continue end
 
 		if not showResetAll and option.resetButton:IsVisible() then
@@ -198,9 +256,10 @@ function PANEL:OnValueChange()
 	if self.savePanel.isActive then
 		if not moveSavePanelBack then return end --If a revert button is visible, then don't do anything, otherwise move the panel back down
 
-		self:MoveBack(self.revertButton, oldSavePanelPosX)
+		self:MoveBack()
 		return
 	else
+		self.CloseButton.disable = true
 		self.savePanel.isActive = true
 	end
 

@@ -1,4 +1,11 @@
-EggrollMelonAPI.ConfigGUI.RegisterConfig("Test", "test", "testconfig", {}, {76561198136289109}, "testconfig")
+EggrollMelonAPI.ConfigGUI.RegisterConfig("Test", "test", "testconfig", "Default Category", {}, {76561198136289109}, "testconfig")
+EggrollMelonAPI.ConfigGUI.RegisterCategory("test", "Test Category")
+EggrollMelonAPI.ConfigGUI.RegisterCategory("test", "Idk Category")
+EggrollMelonAPI.ConfigGUI.RegisterCategory("test", "ATest Category")
+EggrollMelonAPI.ConfigGUI.RegisterCategory("test", "GgdfTest Category")
+EggrollMelonAPI.ConfigGUI.RegisterCategory("test", "CdghTest Category")
+EggrollMelonAPI.ConfigGUI.RegisterCategory("test", "IujTest Category")
+
 
 local optionTable = {
 	{
@@ -6,6 +13,7 @@ local optionTable = {
 		optionText = "What roles should be prevented from going AFK",
 		optionName = "testOption",
 		optionType = "NumSlider",
+		optionCategory = "GgdfTest Category",
 		optionData = {
 			min = 1,
 			max = 10,
@@ -19,6 +27,7 @@ local optionTable = {
 		optionText = "What roles should be prevented from going AFK",
 		optionName = "testOption2",
 		optionType = "NumSlider",
+		optionCategory = "CdghTest Category",
 		optionData = {
 			min = 1,
 			max = 10,
