@@ -143,6 +143,8 @@ function EggrollMelonAPI.ConfigGUI.RegisterTable(configID, parentSection, subsec
 	end
 end
 
+function EggrollMelonAPI.ConfigGUI.AddConfigLanguage()
+
 --[[
 Adds an option to the config to the options table. Assign the config option to the given subsection in the configDataPruned table with the default value if the value doesn't exist in the file. Check if the option already exists in file, using the sub and parent section.
 The options table should have this struture:

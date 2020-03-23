@@ -6,11 +6,9 @@ EggrollMelonAPI.ConfigGUI.RegisterCategory("test", "GgdfTest Category")
 EggrollMelonAPI.ConfigGUI.RegisterCategory("test", "CdghTest Category")
 EggrollMelonAPI.ConfigGUI.RegisterCategory("test", "IujTest Category")
 
-
 local optionTable = {
 	{
 		optionID = "test",
-		optionText = "What roles should be prevented from going AFK",
 		optionName = "testOption",
 		optionType = "NumSlider",
 		optionCategory = "GgdfTest Category",
@@ -24,7 +22,6 @@ local optionTable = {
 	},
 	{
 		optionID = "test2",
-		optionText = "What roles should be prevented from going AFK",
 		optionName = "testOption2",
 		optionType = "NumSlider",
 		optionCategory = "CdghTest Category",
@@ -38,7 +35,6 @@ local optionTable = {
 	},
 	{
 		optionID = "test3",
-		optionText = "What roles should be prevented from going AFK",
 		optionName = "testOption3",
 		optionType = "NumSlider",
 		optionData = {
@@ -51,7 +47,6 @@ local optionTable = {
 	},
 	{
 		optionID = "test4",
-		optionText = "What roles should be prevented from going AFK",
 		optionName = "testOption4",
 		optionType = "NumSlider",
 		optionData = {
@@ -65,7 +60,6 @@ local optionTable = {
 
 	{
 		optionID = "test5",
-		optionText = "What roles should be prevented from going AFK",
 		optionName = "testOption5",
 		optionType = "NumSlider",
 		optionData = {
@@ -79,7 +73,6 @@ local optionTable = {
 
 	{
 		optionID = "test6",
-		optionText = "What roles should be prevented from going AFK",
 		optionName = "testOption6",
 		optionType = "NumSlider",
 		optionData = {
@@ -93,7 +86,6 @@ local optionTable = {
 
 	{
 		optionID = "test7",
-		optionText = "What roles should be prevented from going AFK",
 		optionName = "testOption7",
 		optionType = "NumSlider",
 		optionData = {
@@ -107,7 +99,6 @@ local optionTable = {
 
 	{
 		optionID = "test8",
-		optionText = "What roles should be prevented from going AFK",
 		optionName = "testOption8",
 		optionType = "NumSlider",
 		optionData = {
@@ -119,6 +110,66 @@ local optionTable = {
 		priority = 7
 	},
 }
+
+local englishLanguageTable = {
+	[ "test" ] = {
+		"What roles should be prevented from going AFK"
+	},
+	["test2"] = {
+		"What roles should be prevented from going AFK"
+	},
+	[ "test3" ] = {
+		"What roles should be prevented from going AFK"
+	},
+	["test4"] = {
+		"What roles should be prevented from going AFK"
+	},
+	[ "test5" ] = {
+		"What roles should be prevented from going AFK"
+	},
+	["test6"] = {
+		"What roles should be prevented from going AFK"
+	},
+	[ "test7" ] = {
+		"What roles should be prevented from going AFK"
+	},
+	["test8"] = {
+		"What roles should be prevented from going AFK"
+	}
+}
+
+local spanishLanguageTable = {
+	[ "test" ] = {
+		"g"
+	},
+	["test2"] = {
+		"g"
+	},
+	[ "test3" ] = {
+		"g"
+	},
+	["test4"] = {
+		"g"
+	},
+	[ "test5" ] = {
+		"g"
+	},
+	["test6"] = {
+		"g"
+	},
+	[ "test7" ] = {
+		"g"
+	},
+	["test8"] = {
+		"g"
+	}
+}
+
+
+
+--Add a function on the server that takes these table values and assigns them to the optionText variable of each option and if the option is a dropdown menu then the rest of the strings in the table are the options in order.
+--Add function on the client that adds the language into a drop down menu. upon language change, refresh all option names and drop down menu options. save this change in the client's files.
+--Make addonLanguageTables as well. The language configs will 
 
 for k, v in ipairs(optionTable) do
 	EggrollMelonAPI.ConfigGUI.AddConfigOption("test", v)
