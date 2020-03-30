@@ -227,7 +227,19 @@ function PANEL:PopulateConfig()
 
 	self:SetTitle(EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].addonName .. " Config")
 
-	self.LanguageSelection = vgui.Create("")
+	local horizontalTitleSize = self.Title:GetSize()
+
+	local offsetX = self.Title:GetPos()
+
+	self.LanguageSelection = vgui.Create("DComboBox", self)
+	self.LanguageSelection:SetPos(offsetX + horizontalTitleSize + 7, 1)
+	self.LanguageSelection:SetSize(ScrW() / 10, self:GetTall() - self.Window:GetTall() - 2)
+	self.LanguageSelection.Paint = function(pnl, w, h)
+		surface.SetDrawColor(Color(150, 150, 150))
+		surface.DrawRect(0, 0, w, h)
+	end
+
+	--Make the language selection look better, then populate with EggrollMelonAPI.ConfigGUI.ConfigTable[configID].language
 end
 
 function PANEL:OnValueChange()

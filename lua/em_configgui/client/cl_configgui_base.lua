@@ -45,6 +45,23 @@ function EggrollMelonAPI.ConfigGUI.RegisterCategory(configID, categoryName)
 end
 
 --[[
+Adds a language to the config
+Arguments:
+configID - the ID of the config to be opened
+configLanguageTable:
+	[languageName] = {
+		[optionID] = {
+			optionText = string
+			dropdownOptions = table (optional)
+		}
+	}
+]]
+
+function EggrollMelonAPI.ConfigGUI.AddConfigLanguage(configID, configLanguageTable)
+	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].language = configLanguageTable
+end
+
+--[[
 Opens the given config
 Arguments:
 configID - the ID of the config to be opened
@@ -93,17 +110,22 @@ net.Receive("EggrollMelonAPI_OpenConfig", function()
 	local configData = net.ReadString()
 
 	if configData ~= "" then
+		local configLanguage = EggrollMelonAPI.ConfigGUI.ConfigTable[configID].language[file.Read("eggrollmelonapi/configgui/language.txt") or "English"]
 		for optionID, serverOptions in pairs(util.JSONToTable(configData)) do
 			local optionCategory = serverOptions.optionCategory
-			serverOptions.optionCategory = nil
+			serverOptions.optionCategory = nil --Why?
 			EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionCategory][optionID] = serverOptions
+			EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionCategory][optionID].optionText = configLanguage[optionID][1]
+
+			if EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionCategory][optionID].optionType == "Dropdown" then
+				EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionCategory][optionID].optionData.dropdownOptions = configLanguage[optionID][2] --For dropdown menus, the menu's options need to be gotten from the language table
+			end
 		end
 	end
 
 	--[[
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options = {
 		[optionID] = {
-			["optionText"] = string,
 			["optionCategory"] = string
 			["optionType"] = string
 			["optionData"] = table
@@ -118,7 +140,6 @@ net.Receive("EggrollMelonAPI_OpenConfig", function()
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options table = {
 		["optionCategory"] = {
 			["optionID"] = {
-				["optionText"] = string
 				["optionType"] = string
 				["optionData"] = table
 				["currentValue"] = any

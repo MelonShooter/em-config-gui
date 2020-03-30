@@ -111,61 +111,34 @@ local optionTable = {
 	},
 }
 
-local englishLanguageTable = {
-	[ "test" ] = {
-		"What roles should be prevented from going AFK"
-	},
-	["test2"] = {
-		"What roles should be prevented from going AFK"
-	},
-	[ "test3" ] = {
-		"What roles should be prevented from going AFK"
-	},
-	["test4"] = {
-		"What roles should be prevented from going AFK"
-	},
-	[ "test5" ] = {
-		"What roles should be prevented from going AFK"
-	},
-	["test6"] = {
-		"What roles should be prevented from going AFK"
-	},
-	[ "test7" ] = {
-		"What roles should be prevented from going AFK"
-	},
-	["test8"] = {
-		"What roles should be prevented from going AFK"
+local configLanguageTable = {
+	["English"] = {
+		["test"] = {
+			"What roles should be prevented from going AFK"
+		},
+		["test2"] = {
+			"What roles should be prevented from going AFK"
+		},
+		[ "test3" ] = {
+			"What roles should be prevented from going AFK"
+		},
+		["test4"] = {
+			"What roles should be prevented from going AFK"
+		},
+		[ "test5" ] = {
+			"What roles should be prevented from going AFK"
+		},
+		["test6"] = {
+			"What roles should be prevented from going AFK"
+		},
+		[ "test7" ] = {
+			"What roles should be prevented from going AFK"
+		},
+		["test8"] = {
+			"What roles should be prevented from going AFK"
+		}
 	}
 }
-
-local spanishLanguageTable = {
-	[ "test" ] = {
-		"g"
-	},
-	["test2"] = {
-		"g"
-	},
-	[ "test3" ] = {
-		"g"
-	},
-	["test4"] = {
-		"g"
-	},
-	[ "test5" ] = {
-		"g"
-	},
-	["test6"] = {
-		"g"
-	},
-	[ "test7" ] = {
-		"g"
-	},
-	["test8"] = {
-		"g"
-	}
-}
-
-
 
 --Add a function on the server that takes these table values and assigns them to the optionText variable of each option and if the option is a dropdown menu then the rest of the strings in the table are the options in order.
 --Add function on the client that adds the language into a drop down menu. upon language change, refresh all option names and drop down menu options. save this change in the client's files.
@@ -174,3 +147,5 @@ local spanishLanguageTable = {
 for k, v in ipairs(optionTable) do
 	EggrollMelonAPI.ConfigGUI.AddConfigOption("test", v)
 end
+
+EggrollMelonAPI.ConfigGUI.AddConfigLanguage("test", configLanguageTable)

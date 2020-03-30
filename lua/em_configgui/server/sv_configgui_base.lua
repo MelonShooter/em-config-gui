@@ -161,7 +161,6 @@ Arguments:
 configID - the ID of the config to add the category to
 optionTable:
 	optionID - a unique identifier for the option (to be used to verify info sent from client to server, NOT TO BE PUT IN FILE)
-	optionText - the text of the option to add
 	subsection (optional)- the subsection in the config table the option's value goes in, goes to base config table if non-existent
 	parentSection (optional) - the parent of the subsection if it's not the base config table
 	optionName - the variable name of the option to be put into whatever subsection is specified, must be unique WITHIN the subsection
@@ -178,7 +177,7 @@ function EggrollMelonAPI.ConfigGUI.AddConfigOption(configID, optionTable)
 
 	configID = string.lower(configID)
 
-	if not optionID or not optionTable.optionText or not optionTable.optionName or not
+	if not optionID or not optionTable.optionName or not
 	optionTable.optionType or not optionTable.optionData or not optionTable.defaultValue then
 		ErrorNoHalt("Corrupt Config option. Config ID: " .. configID .. ". Skipping...")
 		return
@@ -200,7 +199,6 @@ function EggrollMelonAPI.ConfigGUI.AddConfigOption(configID, optionTable)
 	end
 
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID] = {}
-	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].optionText = optionTable.optionText
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].optionCategory = optionTable.optionCategory or EggrollMelonAPI.ConfigGUI.ConfigTable[configID].defaultCategory or "General Config"
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].optionType = optionTable.optionType
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].optionData = optionTable.optionData
@@ -249,7 +247,6 @@ end
 --[[
 options table
 	[optionID] = {
-		["optionText"] = string,
 		["optionCategory"] = string
 		["optionType"] = string
 		["optionData"] = table
@@ -315,7 +312,7 @@ end)
 Adds the config chat commands, if any
 ]]
 
-hook.Add("PlayerSay", "EggrollMelonAPI_OpenConfig", function(ply, text)
+hook.Add("PlayerSay", "EggrollMelonAPI_OpenConfigChatCommand", function(ply, text)
 	if not EggrollMelonAPI.ConfigGUI.ChatCommandTable[text] then return end
 
 	ply:ConCommand(EggrollMelonAPI.ConfigGUI.ChatCommandTable[text])
@@ -326,3 +323,5 @@ This doesn't do anything on the server. Allows for it to be called in the shared
 ]]
 
 function EggrollMelonAPI.ConfigGUI.RegisterCategory() end
+
+function EggrollMelonAPI.ConfigGUI.AddConfigLanguage() end
