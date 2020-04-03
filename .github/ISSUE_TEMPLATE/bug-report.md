@@ -3,7 +3,7 @@ name: Bug Report
 about: For any outstanding bugs.
 title: "[BUG] "
 labels: bug
-assignees: BLEEPBLOOPforLife
+assignees: MelonShooter
 
 ---
 
