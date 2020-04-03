@@ -1,7 +1,6 @@
 --[[
 Add something at the drop down menu at the top left, after title, to change languages, Maybe put a universal symbol up there.
 LOCALIZATION CAPABILITIES
-
 ]]
 
 EggrollMelonAPI = EggrollMelonAPI or {}
@@ -19,6 +18,8 @@ defaultCategoryName - the name of the default category in the GUI
 ]]
 
 function EggrollMelonAPI.ConfigGUI.RegisterConfig(addonName, configID, consoleCommand, defaultCategoryName)
+	configID = string.lower(configID)
+
 	if EggrollMelonAPI.ConfigGUI.ConfigTable[configID] then return end
 
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID] = {}
@@ -39,6 +40,8 @@ categoryName - the name of the category to add
 ]]
 
 function EggrollMelonAPI.ConfigGUI.RegisterCategory(configID, categoryName)
+	configID = string.lower(configID)
+
 	if EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[categoryName] then return end
 
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[categoryName] = {}
@@ -58,6 +61,8 @@ configLanguageTable:
 ]]
 
 function EggrollMelonAPI.ConfigGUI.AddConfigLanguage(configID, configLanguageTable)
+	configID = string.lower(configID)
+
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].language = configLanguageTable
 end
 
@@ -68,6 +73,8 @@ configID - the ID of the config to be opened
 ]]
 
 local function openConfig(configID)
+	configID = string.lower(configID)
+
 	if EggrollMelonAPI.ConfigGUI.ActiveConfigs[configID] then return end
 
 	EggrollMelonAPI.ConfigGUI.ActiveConfigs[configID] = vgui.Create("EggrollMelonAPI_ConfigGUI")
@@ -76,6 +83,8 @@ local function openConfig(configID)
 end
 
 local function closeConfig(configID)
+	configID = string.lower(configID)
+
 	if not EggrollMelonAPI.ConfigGUI.ActiveConfigs[configID] then return end
 
 	EggrollMelonAPI.ConfigGUI.ActiveConfigs[configID]:Remove() --won't remove this properly because its pass by value
@@ -89,6 +98,8 @@ configID - the ID of the config to be saved
 ]]
 
 function EggrollMelonAPI.ConfigGUI.SendConfig(configID)
+	configID = string.lower(configID)
+
 	local saveString = util.TableToJSON(EggrollMelonAPI.ConfigGUI.ConfigTable[configID].saveTable)
 	net.Start("EggrollMelonAPI_SendNewConfiguration")
 	net.WriteString(configID)
@@ -110,15 +121,16 @@ net.Receive("EggrollMelonAPI_OpenConfig", function()
 	local configData = net.ReadString()
 
 	if configData ~= "" then
-		local configLanguage = EggrollMelonAPI.ConfigGUI.ConfigTable[configID].language[file.Read("eggrollmelonapi/configgui/language.txt") or "English"]
+		local configLanguage = file.Read("eggrollmelonapi/configgui/" .. string.lower(configID) .. "language.txt") or "English"
+		local configLanguageTable = EggrollMelonAPI.ConfigGUI.ConfigTable[configID].language[configLanguage] or EggrollMelonAPI.ConfigGUI.ConfigTable[configID].language["English"]
 		for optionID, serverOptions in pairs(util.JSONToTable(configData)) do
 			local optionCategory = serverOptions.optionCategory
-			serverOptions.optionCategory = nil --Why?
+			serverOptions.optionCategory = nil --Not used after this is done
 			EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionCategory][optionID] = serverOptions
-			EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionCategory][optionID].optionText = configLanguage[optionID][1]
+			EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionCategory][optionID].optionText = configLanguageTable[optionID][1]
 
 			if EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionCategory][optionID].optionType == "Dropdown" then
-				EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionCategory][optionID].optionData.dropdownOptions = configLanguage[optionID][2] --For dropdown menus, the menu's options need to be gotten from the language table
+				EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionCategory][optionID].optionData.dropdownOptions = configLanguageTable[optionID][2] --For dropdown menus, the menu's options need to be gotten from the language table
 			end
 		end
 	end

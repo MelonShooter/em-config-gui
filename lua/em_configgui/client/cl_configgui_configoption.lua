@@ -93,7 +93,7 @@ Populate the option by creating the according option as a child of this panel. M
 function PANEL:PopulateOption(optionInfo)
 	self.defaultValue = optionInfo.defaultValue
 	self.oldValue = optionInfo.currentValue
-	self.optionText = optionInfo.optionText .. " (Default: " .. self.defaultValue .. ")"
+	self.optionText = optionInfo.optionText
 
 	surface.SetFont("EggrollMelonAPI_ConfigOptionFont")
 	local _, labelHeight = surface.GetTextSize(self.optionText)
@@ -156,8 +156,6 @@ Adds the option text
 ]]
 
 function PANEL:Paint(w, h)
-	if not self.optionText then return end
-
 	surface.SetFont("EggrollMelonAPI_ConfigOptionFont")
 
 	local textWidth = surface.GetTextSize(self.optionText)

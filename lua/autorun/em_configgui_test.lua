@@ -5,11 +5,20 @@ EggrollMelonAPI.ConfigGUI.RegisterCategory("test", "ATest Category")
 EggrollMelonAPI.ConfigGUI.RegisterCategory("test", "GgdfTest Category")
 EggrollMelonAPI.ConfigGUI.RegisterCategory("test", "CdghTest Category")
 EggrollMelonAPI.ConfigGUI.RegisterCategory("test", "IujTest Category")
+EggrollMelonAPI.ConfigGUI.RegisterTable("test", "testParent")
+EggrollMelonAPI.ConfigGUI.RegisterTable("test", "testParent2")
+EggrollMelonAPI.ConfigGUI.RegisterTable("test", "testParent", "testChild")
+EggrollMelonAPI.ConfigGUI.RegisterTable("test", "testParent", "testChild2")
+EggrollMelonAPI.ConfigGUI.RegisterTable("test", "testParent2", "testChild3")
+EggrollMelonAPI.ConfigGUI.RegisterTable("test", "testParent2", "testChild4")
+
 
 local optionTable = {
 	{
 		optionID = "test",
 		optionName = "testOption",
+		parentSection = "testParent2",
+		subsection = "testChild3",
 		optionType = "NumSlider",
 		optionCategory = "GgdfTest Category",
 		optionData = {
@@ -23,6 +32,8 @@ local optionTable = {
 	{
 		optionID = "test2",
 		optionName = "testOption2",
+		parentSection = "testParent",
+		subsection = "testChild2",
 		optionType = "NumSlider",
 		optionCategory = "CdghTest Category",
 		optionData = {
@@ -36,6 +47,8 @@ local optionTable = {
 	{
 		optionID = "test3",
 		optionName = "testOption3",
+		parentSection = "testParent",
+		subsection = "testChild",
 		optionType = "NumSlider",
 		optionData = {
 			min = 1,
@@ -48,6 +61,8 @@ local optionTable = {
 	{
 		optionID = "test4",
 		optionName = "testOption4",
+		parentSection = "testParent2",
+		subsection = "testChild4",
 		optionType = "NumSlider",
 		optionData = {
 			min = 1,
@@ -62,6 +77,8 @@ local optionTable = {
 		optionID = "test5",
 		optionName = "testOption5",
 		optionType = "NumSlider",
+		parentSection = "testParent",
+		subsection = "testChild2",
 		optionData = {
 			min = 1,
 			max = 10,
@@ -114,10 +131,10 @@ local optionTable = {
 local configLanguageTable = {
 	["English"] = {
 		["test"] = {
-			"What roles should be prevented from going AFK"
+			"What roles from going AFK"
 		},
 		["test2"] = {
-			"What roles should be prevented from going AFK"
+			"What roles should be from going AFK"
 		},
 		[ "test3" ] = {
 			"What roles should be prevented from going AFK"
@@ -136,6 +153,60 @@ local configLanguageTable = {
 		},
 		["test8"] = {
 			"What roles should be prevented from going AFK"
+		}
+	},
+
+	["Español"] = {
+		["test"] = {
+			"What roles should be from going AFK"
+		},
+		["test2"] = {
+			"What roles be from going AFK"
+		},
+		[ "test3" ] = {
+			"What roles should be from going AFK"
+		},
+		["test4"] = {
+			"What roles should be from going AFK"
+		},
+		[ "test5" ] = {
+			"What roles should be from going AFK"
+		},
+		["test6"] = {
+			"What roles should be from going AFK"
+		},
+		[ "test7" ] = {
+			"What roles should be from going AFK"
+		},
+		["test8"] = {
+			"What roles should be from going AFK"
+		}
+	},
+
+	["中文 （简体字）"] = {
+		["test"] = {
+			"本来是个"
+		},
+		["test2"] = {
+			"本来是个"
+		},
+		[ "test3" ] = {
+			"本来是个"
+		},
+		["test4"] = {
+			"本来是个"
+		},
+		[ "test5" ] = {
+			"本来是个"
+		},
+		["test6"] = {
+			"本来是个"
+		},
+		[ "test7" ] = {
+			"本来是个"
+		},
+		["test8"] = {
+			"本来是个"
 		}
 	}
 }

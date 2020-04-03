@@ -20,6 +20,8 @@ surface.CreateFont("EggrollMelonAPI_ConfigSaveTextFont", {
 })
 
 local PANEL = {}
+local normalComboBox
+local clickedComboBox
 
 --[[
 Called when the panel should be move back below the panel
@@ -42,6 +44,9 @@ function PANEL:MoveBack()
 end
 
 function PANEL:Init()
+	normalComboBox = GWEN.CreateTextureNormal(496, 272 + 32, 15, 15)
+	clickedComboBox = GWEN.CreateTextureNormal(496, 272, 15, 15)
+
 	self:MakePopup()
 	self:SetNoCategoryRefresh(true)
 	self:SetSizeUpdate(ScrW() * .7, ScrH() * .7)
@@ -227,19 +232,93 @@ function PANEL:PopulateConfig()
 
 	self:SetTitle(EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].addonName .. " Config")
 
-	local horizontalTitleSize = self.Title:GetSize()
-
-	local offsetX = self.Title:GetPos()
+	local configLanguage = file.Read("eggrollmelonapi/configgui/" .. string.lower(self.configID) .. "language.txt")  or "English"
 
 	self.LanguageSelection = vgui.Create("DComboBox", self)
-	self.LanguageSelection:SetPos(offsetX + horizontalTitleSize + 7, 1)
-	self.LanguageSelection:SetSize(ScrW() / 10, self:GetTall() - self.Window:GetTall() - 2)
+	self.LanguageSelection:SetPos(self:GetWide() * 0.82, 2)
+	self.LanguageSelection:SetValue(EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].language[configLanguage] and configLanguage or "English")
+	self.LanguageSelection:SetSize(ScrW() / 10, self:GetTall() - self.Window:GetTall() - 4)
+	self.LanguageSelection:SetTextColor(Color(200, 200, 200))
 	self.LanguageSelection.Paint = function(pnl, w, h)
-		surface.SetDrawColor(Color(150, 150, 150))
-		surface.DrawRect(0, 0, w, h)
+		draw.RoundedBox(4, 0, 0, w, h, Color(100, 100, 100))
 	end
 
-	--Make the language selection look better, then populate with EggrollMelonAPI.ConfigGUI.ConfigTable[configID].language
+	self.LanguageSelection.DropButton.Paint = function(panel, w, h)
+		if panel.ComboBox.Depressed or panel.ComboBox:IsMenuOpen() then
+			return clickedComboBox(0, 0, w, h)
+		end
+
+		normalComboBox(0, 0, w, h)
+	end
+
+	self.LanguageSelection.DoClick = function()
+		if (self.LanguageSelection:IsMenuOpen()) then
+			return self.LanguageSelection:CloseMenu()
+		end
+
+		self.LanguageSelection:OpenMenu()
+
+		if self.LanguageSelection.Menu then
+			for _, v in ipairs(self.LanguageSelection.Menu:GetCanvas():GetChildren()) do
+				v.Paint = function(btn, w, h)
+					surface.SetDrawColor(Color(200, 200, 200))
+					surface.DrawRect(0, 0, w, h)
+
+					if btn:IsHovered() then
+						if not btn.hoverlerp then
+							btn.hoverlerp = 0
+						elseif btn.hoverlerp < 1 then
+							btn.hoverlerp = btn.hoverlerp + 0.075
+						end
+
+						surface.SetDrawColor(Color(220, 220, 220))
+						surface.DrawRect(0, 0, Lerp(btn.hoverlerp, 0, btn:GetWide()), h)
+					elseif btn.hoverlerp then
+						btn.hoverlerp = btn.hoverlerp - 0.075
+
+						surface.SetDrawColor(btn.HoverColor or Color(220, 220, 220))
+						surface.DrawRect( 0, 0, Lerp(btn.hoverlerp, 0, btn:GetWide()), h)
+
+						if btn.hoverlerp <= 0 then
+							btn.hoverlerp = nil
+						end
+					end
+				end
+			end
+		end
+	end
+
+	for languageName in pairs(EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].language) do
+		self.LanguageSelection:AddChoice(languageName)
+	end
+
+	self.LanguageSelection.OnSelect = function(_, __, value) --Write new language preference to client's files and reload language files
+		if not file.Exists("eggrollmelonapi", "DATA") then
+			file.CreateDir("eggrollmelonapi")
+		end
+
+		if not file.Exists("eggrollmelonapi/configgui", "DATA") then
+			file.CreateDir("eggrollmelonapi/configgui")
+		end
+
+		file.Write("eggrollmelonapi/configgui/" .. string.lower(self.configID) .. "language.txt", value)
+
+		for categoryName, optionsTable in SortedPairs(EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].options) do  --Changes language of text in all categories but doesn't refresh current category
+			for optionID, optionInfo in SortedPairsByMemberValue(optionsTable, "priority", false) do
+				optionInfo.optionText = EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].language[value][optionID][1]
+
+				if optionInfo.optionType == "Dropdown" then
+					optionInfo.optionData.dropdownOptions = EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].language[value][optionID][2]
+				end
+			end
+		end
+
+		for k, v in ipairs(self.ContentDScrollPanel:GetCanvas():GetChildren()) do --Changes language of text of options in current category
+			if v:GetName() ~= "EggrollMelonAPI_ConfigOption" then continue end
+
+			v.optionText = EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].language[value][v.optionID][1]
+		end
+	end
 end
 
 function PANEL:OnValueChange()
