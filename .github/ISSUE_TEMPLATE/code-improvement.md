@@ -3,7 +3,7 @@ name: Code Improvement
 about: For any code that can be improved.
 title: "[CODE IMPROVEMENT] "
 labels: code-improvement
-assignees: BLEEPBLOOPforLife
+assignees: MelonShooter
 
 ---
 
