@@ -141,6 +141,31 @@ function PANEL:SetConfigID(configID)
 	self.configID = configID
 end
 
+local function drawHoverButton(btn, w, h)
+	surface.SetDrawColor(Color(200, 200, 200))
+	surface.DrawRect(0, 0, w, h)
+
+	if btn:IsHovered() then
+		if not btn.hoverlerp then
+			btn.hoverlerp = 0
+		elseif btn.hoverlerp < 1 then
+			btn.hoverlerp = btn.hoverlerp + 0.075
+		end
+
+		surface.SetDrawColor(Color(220, 220, 220))
+		surface.DrawRect(0, 0, Lerp(btn.hoverlerp, 0, btn:GetWide()), h)
+	elseif btn.hoverlerp then
+		btn.hoverlerp = btn.hoverlerp - 0.075
+
+		surface.SetDrawColor(btn.HoverColor or Color(220, 220, 220))
+		surface.DrawRect( 0, 0, Lerp(btn.hoverlerp, 0, btn:GetWide()), h)
+
+		if btn.hoverlerp <= 0 then
+			btn.hoverlerp = nil
+		end
+	end
+end
+
 --[[
 Populates the config with the config values in the default category
 ]]
@@ -260,30 +285,7 @@ function PANEL:PopulateConfig()
 
 		if self.LanguageSelection.Menu then
 			for _, v in ipairs(self.LanguageSelection.Menu:GetCanvas():GetChildren()) do
-				v.Paint = function(btn, w, h)
-					surface.SetDrawColor(Color(200, 200, 200))
-					surface.DrawRect(0, 0, w, h)
-
-					if btn:IsHovered() then
-						if not btn.hoverlerp then
-							btn.hoverlerp = 0
-						elseif btn.hoverlerp < 1 then
-							btn.hoverlerp = btn.hoverlerp + 0.075
-						end
-
-						surface.SetDrawColor(Color(220, 220, 220))
-						surface.DrawRect(0, 0, Lerp(btn.hoverlerp, 0, btn:GetWide()), h)
-					elseif btn.hoverlerp then
-						btn.hoverlerp = btn.hoverlerp - 0.075
-
-						surface.SetDrawColor(btn.HoverColor or Color(220, 220, 220))
-						surface.DrawRect( 0, 0, Lerp(btn.hoverlerp, 0, btn:GetWide()), h)
-
-						if btn.hoverlerp <= 0 then
-							btn.hoverlerp = nil
-						end
-					end
-				end
+				v.Paint = drawHoverButton
 			end
 		end
 	end

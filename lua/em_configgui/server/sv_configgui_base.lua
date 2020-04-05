@@ -8,10 +8,13 @@ In the end, make sure to test everything, including sending bogus net messages
 ]]
 
 util.AddNetworkString("EggrollMelonAPI_OpenConfig")
+util.AddNetworkString("EggrollMelonAPI_SendConfigsToJoiningPlayer")
+util.AddNetworkString("EggrollMelonAPI_SendNewConfigsToPlayers")
 util.AddNetworkString("EggrollMelonAPI_SendNewConfiguration")
 
 EggrollMelonAPI = EggrollMelonAPI or {}
 EggrollMelonAPI.ConfigGUI = EggrollMelonAPI.ConfigGUI or {}
+EggrollMelonAPI.ConfigGUI.configCount = 0
 EggrollMelonAPI.ConfigGUI.ConfigTable = EggrollMelonAPI.ConfigGUI.ConfigTable or {}
 EggrollMelonAPI.ConfigGUI.ChatCommandTable = EggrollMelonAPI.ConfigGUI.ChatCommandTable or {}
 
@@ -95,7 +98,11 @@ function EggrollMelonAPI.ConfigGUI.RegisterConfig(addonName, configID, consoleCo
 		net.WriteString(configID)
 
 		if EggrollMelonAPI.ConfigGUI.ConfigTable[configID].editing then
-			net.WriteString(util.TableToJSON(EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options)) --add cooldown once this has been sent and needs to be sent again, also don't send if nothing has been changed, check against old table by creating variable in net message EggrollMelonAPI_SendNewConfiguration, make sure to check if table content is equal, not if the two tables are equal
+			local optionsJSONCompressed = util.Compress(util.TableToJSON(EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options))
+			local optionsJSONCompressedLength = string.len(optionsJSONCompressed)
+
+			net.WriteUInt(optionsJSONCompressedLength, 14)
+			net.WriteData(optionsJSONCompressed, optionsJSONCompressedLength)
 		end
 
 		net.Send(ply)
@@ -108,6 +115,7 @@ function EggrollMelonAPI.ConfigGUI.RegisterConfig(addonName, configID, consoleCo
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].userAccessTable = userAccessTable
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].consoleCommand = consoleCommand
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configData = {} --Will contain all changed and default values
+	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].clientConfigData = {} --Will contain the changed and default values of config options to be sent to clients
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].defaultCategory = defaultCategoryName
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].optionLookup = {}
 
@@ -118,6 +126,8 @@ function EggrollMelonAPI.ConfigGUI.RegisterConfig(addonName, configID, consoleCo
 	else
 		EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configDataPruned = EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configDataPruned or {}
 	end
+
+	EggrollMelonAPI.ConfigGUI.configCount = EggrollMelonAPI.ConfigGUI.configCount + 1
 
 	if not chatCommand then return end
 
@@ -176,6 +186,9 @@ function EggrollMelonAPI.ConfigGUI.AddConfigOption(configID, optionTable)
 	configID = string.lower(configID)
 
 	local optionID = optionTable.optionID
+	local parent = optionTable.parentSection
+	local child = optionTable.subsection
+	local configTable = EggrollMelonAPI.ConfigGUI.ConfigTable[configID]
 
 	if not optionID then
 		ErrorNoHalt("Corrupt Config option. Config ID: " .. configID .. ". No optionID given. Printing the optionTable. Skipping...\n")
@@ -202,41 +215,56 @@ function EggrollMelonAPI.ConfigGUI.AddConfigOption(configID, optionTable)
 	local defaultValue = optionTable.defaultValue
 	local currentValue
 
-	if optionTable.parentSection and optionTable.subsection then
-		if not data[optionTable.parentSection] then
+	if parent and child then
+		if not data[parent] then
 			ErrorNoHalt("Corrupt Config option. Config ID: " .. configID .. ". The parent section given doesn't exist. Printing the optionTable. Skipping...\n")
 			PrintTable(optionTable)
 			return
-		elseif not data[optionTable.parentSection][optionTable.subsection] then
+		elseif not data[parent][child] then
 			ErrorNoHalt("Corrupt Config option. Config ID: " .. configID .. ". The subsection given doesn't exist. Printing the optionTable. Skipping...\n")
 			PrintTable(optionTable)
 			return
 		end
 
-		currentValue = data[optionTable.parentSection][optionTable.subsection][optionTable.optionName] or optionTable.defaultValue
-		EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configData[optionTable.parentSection][optionTable.subsection][optionTable.optionName] = currentValue
-	elseif optionTable.parentSection then
-		if not data[optionTable.parentSection] then
+		currentValue = data[parent][child][optionTable.optionName] or optionTable.defaultValue
+		configTable.configData[parent][child][optionTable.optionName] = currentValue
+
+		if optionTable.shared then
+			configTable.clientConfigData[parent] = configTable.clientConfigData[parent] or {}
+			configTable.clientConfigData[parent][child] = configTable.configData[parent][child] or {}
+			configTable.clientConfigData[parent][child][optionTable.optionName] = currentValue
+		end
+	elseif parent then
+		if not data[parent] then
 			ErrorNoHalt("Corrupt Config option. Config ID: " .. configID .. ". The parent section given doesn't exist. Printing the optionTable. Skipping...\n")
 			PrintTable(optionTable)
 			return
 		end
 
-		currentValue = data[optionTable.parentSection][optionTable.optionName] or optionTable.defaultValue
-		EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configData[optionTable.parentSection][optionTable.optionName] = currentValue
+		currentValue = data[parent][optionTable.optionName] or optionTable.defaultValue
+		configTable.configData[parent][optionTable.optionName] = currentValue
+
+		if optionTable.shared then
+			configTable.clientConfigData[parent] = configTable.clientConfigData[parent] or {}
+			configTable.clientConfigData[parent][optionTable.optionName] = currentValue
+		end
 	else
 		currentValue = data[optionTable.optionName] or optionTable.defaultValue
-		EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configData[optionTable.optionName] = currentValue
+		configTable.configData[optionTable.optionName] = currentValue
+
+		if optionTable.shared then
+			configTable.clientConfigData[optionTable.optionName] = currentValue
+		end
 	end
 
-	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID] = {}
-	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].optionCategory = optionTable.optionCategory or EggrollMelonAPI.ConfigGUI.ConfigTable[configID].defaultCategory or "General Config"
-	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].optionType = optionTable.optionType
-	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].optionData = optionTable.optionData
-	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].currentValue = currentValue
-	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].defaultValue = defaultValue
-	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].priority = optionTable.priority
-	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].optionLookup[optionID] = {defaultValue, optionTable.optionName, optionTable.subsection, optionTable.parentSection}
+	configTable.options[optionID] = {}
+	configTable.options[optionID].optionCategory = optionTable.optionCategory or configTable.defaultCategory or "General Config"
+	configTable.options[optionID].optionType = optionTable.optionType
+	configTable.options[optionID].optionData = optionTable.optionData
+	configTable.options[optionID].currentValue = currentValue
+	configTable.options[optionID].defaultValue = defaultValue
+	configTable.options[optionID].priority = optionTable.priority
+	configTable.optionLookup[optionID] = {defaultValue, optionTable.optionName, child, parent, optionTable.shared}
 end
 
 local function hasTwoValues(tbl)
@@ -246,7 +274,7 @@ end
 --[[
 Returns the table of all current config values
 ]]
---lua_run PrintTable(EggrollMelonAPI.ConfigGUI.GetConfigData("test"))
+
 function EggrollMelonAPI.ConfigGUI.GetConfigData(configID)
 	return EggrollMelonAPI.ConfigGUI.ConfigTable[string.lower(configID)].configData
 end
@@ -302,12 +330,14 @@ net.Receive("EggrollMelonAPI_SendNewConfiguration", function(_, ply)
 	if not canAccess or EggrollMelonAPI.ConfigGUI.ConfigTable[configID].editing ~= ply or not saveTable or not isValidSave(configID, saveTable) then return end
 
 	for optionID, newValue in pairs(saveTable) do -- goes through the saveTable sent from the client and adds each option to the configData and configDataPruned
-		EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].currentValue = newValue
 		local defaultValue = EggrollMelonAPI.ConfigGUI.ConfigTable[configID].optionLookup[optionID][1]
 		local optionVariable = EggrollMelonAPI.ConfigGUI.ConfigTable[configID].optionLookup[optionID][2]
 
 		local child = EggrollMelonAPI.ConfigGUI.ConfigTable[configID].optionLookup[optionID][3]
 		local parent = EggrollMelonAPI.ConfigGUI.ConfigTable[configID].optionLookup[optionID][4]
+		local isShared = EggrollMelonAPI.ConfigGUI.ConfigTable[configID].optionLookup[optionID][5]
+
+		EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionID].currentValue = newValue
 
 		if parent and child then
 			EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configData[parent][child][optionVariable] = newValue
@@ -317,6 +347,10 @@ net.Receive("EggrollMelonAPI_SendNewConfiguration", function(_, ply)
 			else
 				EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configDataPruned[parent][child][optionVariable] = newValue
 			end
+
+			if isShared then
+				EggrollMelonAPI.ConfigGUI.ConfigTable[configID].clientConfigData[parent][child][optionVariable] = newValue
+			end
 		elseif parent then
 			EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configData[parent][optionVariable] = newValue
 
@@ -324,6 +358,10 @@ net.Receive("EggrollMelonAPI_SendNewConfiguration", function(_, ply)
 				EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configDataPruned[parent][optionVariable] = nil
 			else
 				EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configDataPruned[parent][optionVariable] = newValue
+			end
+
+			if isShared then
+				EggrollMelonAPI.ConfigGUI.ConfigTable[configID].clientConfigData[parent][optionVariable] = newValue
 			end
 		else
 			EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configData[optionVariable] = newValue
@@ -333,14 +371,27 @@ net.Receive("EggrollMelonAPI_SendNewConfiguration", function(_, ply)
 			else
 				EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configDataPruned[optionVariable] = newValue
 			end
-		end
 
-		if not file.IsDir("em_configgui", "DATA") then
-			file.CreateDir("em_configgui")
+			if isShared then
+				EggrollMelonAPI.ConfigGUI.ConfigTable[configID].clientConfigData[optionVariable] = newValue
+			end
 		end
-
-		file.Write("em_configgui/" .. configID .. ".txt", util.TableToJSON(EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configDataPruned))
 	end
+
+	local configTableJSONCompressed = util.Compress(util.TableToJSON(configTable.clientConfigData))
+	local configTableJSONCompressedLength = string.len(configTableJSONCompressed)
+
+	net.Start("EggrollMelonAPI_SendNewConfigsToPlayers")
+	net.WriteString(string.lower(configID))
+	net.WriteUInt(configTableJSONCompressedLength, 14)
+	net.WriteData(configTableJSONCompressed, configTableJSONCompressedLength)
+	net.Broadcast()
+
+	if not file.IsDir("em_configgui", "DATA") then
+		file.CreateDir("em_configgui")
+	end
+
+	file.Write("em_configgui/" .. configID .. ".txt", util.TableToJSON(EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configDataPruned))
 end)
 
 --[[
@@ -354,6 +405,28 @@ hook.Add("PlayerSay", "EggrollMelonAPI_OpenConfigChatCommand", function(ply, tex
 
 	return ""
 end)
+
+--[[
+Syncs the config table with each client upon joining
+]]
+
+hook.Add("PlayerInitialSpawn", "EggrollMelonAPI_SendConfigsToPlayer", function(ply)
+	net.Start("EggrollMelonAPI_SendConfigsToJoiningPlayer")
+
+	net.WriteUInt(EggrollMelonAPI.ConfigGUI.configCount, 8)
+	for configID, configTable in pairs(EggrollMelonAPI.ConfigGUI.ConfigTable) do
+		local configTableJSONCompressed = util.Compress(util.TableToJSON(configTable.clientConfigData))
+		local configTableJSONCompressedLength = string.len(configTableJSONCompressed)
+
+		net.WriteString(string.lower(configID))
+		net.WriteUInt(configTableJSONCompressedLength, 14)
+		net.WriteData(configTableJSONCompressed, configTableJSONCompressedLength)
+	end
+
+	net.Send(ply)
+end)
+
+
 
 --[[
 This doesn't do anything on the server. Allows for it to be called in the shared realm

@@ -118,20 +118,22 @@ net.Receive("EggrollMelonAPI_OpenConfig", function()
 		return
 	end
 
-	local configData = net.ReadString()
+	local configDataLength = net.ReadUInt(14)
 
-	if configData ~= "" then
-		local configLanguage = file.Read("eggrollmelonapi/configgui/" .. string.lower(configID) .. "language.txt") or "English"
-		local configLanguageTable = EggrollMelonAPI.ConfigGUI.ConfigTable[configID].language[configLanguage] or EggrollMelonAPI.ConfigGUI.ConfigTable[configID].language["English"]
-		for optionID, serverOptions in pairs(util.JSONToTable(configData)) do
-			local optionCategory = serverOptions.optionCategory
-			serverOptions.optionCategory = nil --Not used after this is done
-			EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionCategory][optionID] = serverOptions
-			EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionCategory][optionID].optionText = configLanguageTable[optionID][1]
+	if configDataLength == 0 then return end
 
-			if EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionCategory][optionID].optionType == "Dropdown" then
-				EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionCategory][optionID].optionData.dropdownOptions = configLanguageTable[optionID][2] --For dropdown menus, the menu's options need to be gotten from the language table
-			end
+	local configDataTable = util.JSONToTable(util.Decompress(net.ReadData(configDataLength)))
+	local configLanguage = file.Read("eggrollmelonapi/configgui/" .. string.lower(configID) .. "language.txt") or "English"
+	local configLanguageTable = EggrollMelonAPI.ConfigGUI.ConfigTable[configID].language[configLanguage] or EggrollMelonAPI.ConfigGUI.ConfigTable[configID].language["English"]
+
+	for optionID, serverOptions in pairs(configDataTable) do
+		local optionCategory = serverOptions.optionCategory
+		serverOptions.optionCategory = nil --Not used after this is done
+		EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionCategory][optionID] = serverOptions
+		EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionCategory][optionID].optionText = configLanguageTable[optionID][1]
+
+		if EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionCategory][optionID].optionType == "Dropdown" then
+			EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionCategory][optionID].optionData.dropdownOptions = configLanguageTable[optionID][2] --For dropdown menus, the menu's options need to be gotten from the language table
 		end
 	end
 
@@ -165,8 +167,43 @@ net.Receive("EggrollMelonAPI_OpenConfig", function()
 end)
 
 --[[
+Returns the table of all current config values
+]]
+
+function EggrollMelonAPI.ConfigGUI.GetConfigData(configID)
+	return EggrollMelonAPI.ConfigGUI.ConfigTable[string.lower(configID)].configData
+end
+
+--[[
+Syncs the config table with each client upon joining
+]]
+
+net.Receive("EggrollMelonAPI_SendConfigsToJoiningPlayer", function()
+	for i = 1, net.ReadUInt(8) do
+		local configID = net.ReadString()
+		local configDataLength = net.ReadUInt(14)
+		local configDataTable = util.JSONToTable(util.Decompress(net.ReadData(configDataLength)))
+
+		EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configData = configDataTable
+	end
+end)
+
+--[[
+Syncs the config table when a person with access to the config saves some changes
+]]
+
+net.Receive("EggrollMelonAPI_SendNewConfigsToPlayers", function()
+	local configID = net.ReadString()
+	local configDataLength = net.ReadUInt(14)
+	local configDataTable = util.JSONToTable(util.Decompress(net.ReadData(configDataLength)))
+
+	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configData = configDataTable
+end)
+
+--[[
 These don't do anything on the client. Allows for them to be called in the shared realm
 ]]
 
 function EggrollMelonAPI.ConfigGUI.AddConfigOption() end
+
 function EggrollMelonAPI.ConfigGUI.RegisterTable() end
