@@ -171,11 +171,18 @@ Populates the config with the config values in the default category
 ]]
 
 function PANEL:PopulateConfig()
-	for categoryName, optionsTable in SortedPairs(EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].options) do --Get updated em_configgui, use priority system here
-		local categoryID = self:AddCategory(categoryName)
+	for categoryID, optionsTable in SortedPairs(EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].options) do
+		local configLanguageSetting = file.Read("eggrollmelonapi/configgui/" .. self.configID .. "language.txt")
+		local configLanguage = EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].language[configLanguageSetting] and configLanguageSetting or "English"
+		local configLanguageTable = EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].language[configLanguage] or EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].language["English"]
+		local categoryName = configLanguageTable[categoryID] or categoryID == "general" and EggrollMelonAPI.ConfigGUI.Language[configLanguage][1]
 
-		self:GetCategoryButton(categoryID).DoClick = function( )
-			if self:GetCurrentCategoryName() == categoryName then return end
+		if not categoryName then continue end
+
+		local categoryGUIID = self:AddCategory(categoryName)
+
+		self:GetCategoryButton(categoryGUIID).DoClick = function( )
+			if self:GetCurrentCategoryID() == categoryGUIID then return end
 
 			if self.savePanel.isActive then
 				self.savePanel:ColorTo(Color(60, 40, 40), .1, 0, function()
@@ -189,10 +196,10 @@ function PANEL:PopulateConfig()
 				return
 			end
 
-			self:SetCategory(categoryID)
+			self:SetCategory(categoryGUIID)
 		end
 
-		self:AddContentToCategory(categoryID, "DPanel", function(top)
+		self:AddContentToCategory(categoryGUIID, "DPanel", function(top)
 			top:SetTall(self:GetTall() * .05)
 			top:SetPaintBackground(false)
 			top.Paint = function(_, w, h)
@@ -219,22 +226,22 @@ function PANEL:PopulateConfig()
 		end)
 
 		for optionID, optionInfo in SortedPairsByMemberValue(optionsTable, "priority", false) do
-			self:AddContentToCategory(categoryID, "EggrollMelonAPI_ConfigOption", function(option)
+			self:AddContentToCategory(categoryGUIID, "EggrollMelonAPI_ConfigOption", function(option)
 				option:SetConfigID(self.configID)
 				option:SetOptionID(optionID)
-				option:SetCategory(categoryName)
+				option:SetCategory(categoryID)
 				option:PopulateOption(optionInfo)
 			end)
 		end
 
-		self:AddContentToCategory(categoryID, "DPanel", function(bottom)
+		self:AddContentToCategory(categoryGUIID, "DPanel", function(bottom)
 			bottom:SetTall(self:GetTall() * .1)
 			bottom:SetPaintBackground(false)
 
 			local showResetAll = false
 
 			for _, option in ipairs(self.ContentDScrollPanel:GetCanvas():GetChildren()) do
-				if option:GetName() ~= "EggrollMelonAPI_ConfigOption" or option.category ~= categoryName then continue end --Continue if the child isn't config option or doesn't belong to correct category
+				if option:GetName() ~= "EggrollMelonAPI_ConfigOption" or option.categoryID ~= categoryID then continue end --Continue if the child isn't config option or doesn't belong to correct category
 
 				if option.resetButton:IsVisible() then
 					showResetAll = true
@@ -250,14 +257,16 @@ function PANEL:PopulateConfig()
 			end
 		end)
 
-		if categoryName ~= (EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].defaultCategory or "General Config") then continue end
+		if categoryName ~= (EggrollMelonAPI.ConfigGUI.Language[configLanguage][1] or EggrollMelonAPI.ConfigGUI.Language["English"][1]) then continue end
 
-		self:SetCategory(categoryID)
+		self:SetCategory(categoryGUIID)
 	end
+
+	self:RemoveCategoriesIfEmpty()
 
 	self:SetTitle(EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].addonName .. " Config")
 
-	local configLanguage = file.Read("eggrollmelonapi/configgui/" .. string.lower(self.configID) .. "language.txt")  or "English"
+	local configLanguage = file.Read("eggrollmelonapi/configgui/" .. self.configID .. "language.txt")  or "English"
 
 	self.LanguageSelection = vgui.Create("DComboBox", self)
 	self.LanguageSelection:SetPos(self:GetWide() * 0.82, 2)
@@ -303,10 +312,10 @@ function PANEL:PopulateConfig()
 			file.CreateDir("eggrollmelonapi/configgui")
 		end
 
-		file.Write("eggrollmelonapi/configgui/" .. string.lower(self.configID) .. "language.txt", value)
+		file.Write("eggrollmelonapi/configgui/" .. self.configID .. "language.txt", value)
 
-		for categoryName, optionsTable in SortedPairs(EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].options) do  --Changes language of text in all categories but doesn't refresh current category
-			for optionID, optionInfo in SortedPairsByMemberValue(optionsTable, "priority", false) do
+		for _, optionsTable in SortedPairs(EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].options) do  --Changes language of text in all categories but doesn't refresh current category
+			for optionID, optionInfo in pairs(optionsTable) do
 				optionInfo.optionText = EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].language[value][optionID][1]
 
 				if optionInfo.optionType == "Dropdown" then

@@ -64,13 +64,12 @@ Arguments:
 addonName - Name of the addon to display in the config
 configID - string identifier to create config options
 consoleCommand - the console command to open the config GUI
-defaultCategoryName - the name of the default category in the GUI
 groupAccessTable - the table of user groups who can access the config GUI
 userAccessTable - the table of steam IDs and steam ID 64's that can access the config GUI
 chatCommand (optional) - the chat command to open the config GUI
 ]]
 
-function EggrollMelonAPI.ConfigGUI.RegisterConfig(addonName, configID, consoleCommand, defaultCategoryName, groupAccessTable, userAccessTable, chatCommand)
+function EggrollMelonAPI.ConfigGUI.RegisterConfig(addonName, configID, consoleCommand, groupAccessTable, userAccessTable, chatCommand)
 	configID = string.lower(configID)
 
 	if EggrollMelonAPI.ConfigGUI.ConfigTable[configID] then return end
@@ -116,7 +115,6 @@ function EggrollMelonAPI.ConfigGUI.RegisterConfig(addonName, configID, consoleCo
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].consoleCommand = consoleCommand
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configData = {} --Will contain all changed and default values
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].clientConfigData = {} --Will contain the changed and default values of config options to be sent to clients
-	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].defaultCategory = defaultCategoryName
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].optionLookup = {}
 
 	local configFileName = "em_configgui/" .. configID .. ".txt"
@@ -181,14 +179,15 @@ optionTable:
 ]]
 
 function EggrollMelonAPI.ConfigGUI.AddConfigOption(configID, optionTable)
-	local data = EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configDataPruned
-
+	local configTable = EggrollMelonAPI.ConfigGUI.ConfigTable[configID]
+	local optionID = optionTable.optionID
 	configID = string.lower(configID)
 
-	local optionID = optionTable.optionID
+	if configTable.options[optionID] then return end
+
 	local parent = optionTable.parentSection
 	local child = optionTable.subsection
-	local configTable = EggrollMelonAPI.ConfigGUI.ConfigTable[configID]
+	local data = EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configDataPruned
 
 	if not optionID then
 		ErrorNoHalt("Corrupt Config option. Config ID: " .. configID .. ". No optionID given. Printing the optionTable. Skipping...\n")
@@ -258,7 +257,7 @@ function EggrollMelonAPI.ConfigGUI.AddConfigOption(configID, optionTable)
 	end
 
 	configTable.options[optionID] = {}
-	configTable.options[optionID].optionCategory = optionTable.optionCategory or configTable.defaultCategory or "General Config"
+	configTable.options[optionID].optionCategory = optionTable.optionCategory
 	configTable.options[optionID].optionType = optionTable.optionType
 	configTable.options[optionID].optionData = optionTable.optionData
 	configTable.options[optionID].currentValue = currentValue

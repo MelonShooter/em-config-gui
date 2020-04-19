@@ -24,11 +24,11 @@ function PANEL:SetOptionID(optionID)
 end
 
 --[[
-Sets the category that this option belongs to
+Sets the category id that this option belongs to
 ]]
 
-function PANEL:SetCategory(category)
-	self.category = category
+function PANEL:SetCategory(categoryID)
+	self.categoryID = categoryID
 end
 
 --[[
@@ -66,7 +66,7 @@ function PANEL:Update()
 	if not self.value then return end
 
 	EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].saveTable[self.optionID] = self.value
-	EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].options[self.category][self.optionID].currentValue = self.value
+	EggrollMelonAPI.ConfigGUI.ConfigTable[self.configID].options[self.categoryID][self.optionID].currentValue = self.value
 	self.oldValue = self.value
 	self.revertButton:SetVisible(false)
 end

@@ -7,6 +7,35 @@ EggrollMelonAPI = EggrollMelonAPI or {}
 EggrollMelonAPI.ConfigGUI = EggrollMelonAPI.ConfigGUI or {}
 EggrollMelonAPI.ConfigGUI.ActiveConfigs = EggrollMelonAPI.ConfigGUI.ActiveConfigs or {}
 EggrollMelonAPI.ConfigGUI.ConfigTable = EggrollMelonAPI.ConfigGUI.ConfigTable or {}
+EggrollMelonAPI.ConfigGUI.Language = {
+	["English"] = {
+		"General Settings",
+		"Reset category to default values",
+		"Reset to default value",
+		"Revert unsaved changes to setting",
+		"Revert all unsaved changes",
+		"You have unsaved changes.",
+		"Save changes"
+	},
+	["Español"] = {
+		"Ajustes Generales",
+		"Restaurar categoría a valores por defecto",
+		"Restaurar el valor por defecto",
+		"Deshacer cambio de ajuste no guardado",
+		"Deshacer todos los cambios no guardados",
+		"Tienes cambios no guardados.",
+		"Guardar cambios"
+	},
+	["中文 （简体字）"] = {
+		"General Config",
+		"Reset category to default values",
+		"Reset to default value",
+		"Revert unsaved changes to setting",
+		"Revert all unsaved changes",
+		"You have unsaved changes.",
+		"Save changes"
+	}
+}
 
 --[[
 Registers a config GUI
@@ -17,7 +46,7 @@ consoleCommand - the console command to open the config GUI
 defaultCategoryName - the name of the default category in the GUI
 ]]
 
-function EggrollMelonAPI.ConfigGUI.RegisterConfig(addonName, configID, consoleCommand, defaultCategoryName)
+function EggrollMelonAPI.ConfigGUI.RegisterConfig(addonName, configID, consoleCommand)
 	configID = string.lower(configID)
 
 	if EggrollMelonAPI.ConfigGUI.ConfigTable[configID] then return end
@@ -25,26 +54,25 @@ function EggrollMelonAPI.ConfigGUI.RegisterConfig(addonName, configID, consoleCo
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID] = {}
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].addonName = addonName
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].consoleCommand = consoleCommand
-	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].defaultCategory = defaultCategoryName
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].saveTable = {} --table with registered tables and options (to be received and sent to server)
-	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options = { --table with categories and options (for client)
-		[EggrollMelonAPI.ConfigGUI.ConfigTable[configID].defaultCategory or "General Config"] = {}
-	}
+	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options = {
+		["general"] = {}
+	} --table with categories and options (for client)
 end
 
 --[[
 Adds a category to the config
 Arguments:
 configID - the ID of the config to add the category to
-categoryName - the name of the category to add
+categoryID - the ID of the category to add
 ]]
 
-function EggrollMelonAPI.ConfigGUI.RegisterCategory(configID, categoryName)
+function EggrollMelonAPI.ConfigGUI.RegisterCategory(configID, categoryID)
 	configID = string.lower(configID)
 
-	if EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[categoryName] then return end
+	if EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[categoryID] then return end
 
-	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[categoryName] = {}
+	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[categoryID] = {}
 end
 
 --[[
@@ -62,6 +90,8 @@ configLanguageTable:
 
 function EggrollMelonAPI.ConfigGUI.AddConfigLanguage(configID, configLanguageTable)
 	configID = string.lower(configID)
+
+	if EggrollMelonAPI.ConfigGUI.ConfigTable[configID].language then return end
 
 	EggrollMelonAPI.ConfigGUI.ConfigTable[configID].language = configLanguageTable
 end
@@ -127,7 +157,10 @@ net.Receive("EggrollMelonAPI_OpenConfig", function()
 	local configLanguageTable = EggrollMelonAPI.ConfigGUI.ConfigTable[configID].language[configLanguage] or EggrollMelonAPI.ConfigGUI.ConfigTable[configID].language["English"]
 
 	for optionID, serverOptions in pairs(configDataTable) do
-		local optionCategory = serverOptions.optionCategory
+		local optionCategory = serverOptions.optionCategory or "general"
+		if not EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionCategory] then
+			error("The category ID: " .. optionCategory .. " doesn't exist in the options table. Was it created?")
+		end
 		serverOptions.optionCategory = nil --Not used after this is done
 		EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionCategory][optionID] = serverOptions
 		EggrollMelonAPI.ConfigGUI.ConfigTable[configID].options[optionCategory][optionID].optionText = configLanguageTable[optionID][1]
