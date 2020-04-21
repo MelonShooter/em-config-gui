@@ -141,11 +141,12 @@ subsectionName (optional) - the subsection of the parentSection
 
 function EggrollMelonAPI.ConfigGUI.RegisterTable(configID, parentSection, subsectionName)
 	configID = string.lower(configID)
+	local configDataPruned = EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configDataPruned
 
-	if subsectionName and not EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configData[parentSection][subsectionName] then
+	if subsectionName and not configDataPruned[parentSection][subsectionName] then
 		EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configData[parentSection][subsectionName] = {}
-		EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configDataPruned[parentSection][subsectionName] = {}
-	elseif not subsectionName and not EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configData[parentSection] then
+		configDataPruned[parentSection][subsectionName] = {}
+	elseif not subsectionName and not EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configDataPruned[parentSection] then
 		EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configData[parentSection] = {}
 		EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configDataPruned[parentSection] = {}
 	end
@@ -188,6 +189,11 @@ function EggrollMelonAPI.ConfigGUI.AddConfigOption(configID, optionTable)
 	local parent = optionTable.parentSection
 	local child = optionTable.subsection
 	local data = EggrollMelonAPI.ConfigGUI.ConfigTable[configID].configDataPruned
+	
+	if not configTable.firstTimeMerge then
+		configTable.configData = table.Copy(data)
+		configTable.firstTimeMerge = true
+	end
 
 	if not optionID then
 		ErrorNoHalt("Corrupt Config option. Config ID: " .. configID .. ". No optionID given. Printing the optionTable. Skipping...\n")
